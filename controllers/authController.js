@@ -1,9 +1,17 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
 // Generate JWT
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  const secret = process.env.JWT_SECRET;
+  
+  if (!secret) {
+    console.error('JWT_SECRET is not defined in environment variables');
+    throw new Error('JWT configuration error - secret key missing');
+  }
+  
+  return jwt.sign({ id }, secret, {
     expiresIn: '30d',
   });
 };
@@ -54,23 +62,36 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for user email
+    // Check if email and password are provided
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide email and password' });
+    }
+    
+    // Find user by email
     const user = await User.findOne({ email });
-
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id),
-      });
+    
+    // Check if user exists and password matches
+    if (user && (await bcrypt.compare(password, user.password))) {
+      try {
+        const token = generateToken(user._id);
+        
+        res.json({
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          token,
+        });
+      } catch (tokenError) {
+        console.error('Token generation error:', tokenError);
+        return res.status(500).json({ message: 'Server configuration error - unable to generate authentication token' });
+      }
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during authentication' });
   }
 };
 
