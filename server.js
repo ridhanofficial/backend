@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const medicineRoutes = require('./routes/medicineRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const authRoutes = require('./routes/authRoutes');
+const transactionRoutes = require('./routes/transactionRoutes'); // Add this line
 const { setupScheduledTasks } = require('./utils/scheduler');
 
 // Load environment variables
@@ -29,6 +30,7 @@ app.use(express.json());
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/transactions', transactionRoutes); // Add this line
 
 // Simple test route for checking connection
 app.get('/api/test', (req, res) => {

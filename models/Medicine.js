@@ -33,17 +33,38 @@ const medicineSchema = mongoose.Schema(
     },
     stockHistory: [
       {
-        quantity: Number,
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        operation: {
+          type: String,
+          enum: ['added', 'removed', 'sold', 'expired', 'returned'],
+          required: true,
+        },
+        transactionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Transaction',
+        },
         date: {
           type: Date,
           default: Date.now,
         },
-        operation: {
-          type: String,
-          enum: ['added', 'removed'],
-        },
+        note: String,
       },
     ],
+    salesData: {
+      totalUnitsSold: {
+        type: Number, 
+        default: 0
+      },
+      lastSaleDate: Date,
+      salesByMonth: {
+        type: Map,
+        of: Number,
+        default: {}
+      },
+    },
     demandFactors: {
       seasonal: {
         type: Boolean,
