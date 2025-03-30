@@ -1,60 +1,69 @@
-require('dotenv').config(); // Load environment variables at the top
-
 const express = require('express');
+const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const medicineRoutes = require('./routes/medicineRoutes');
-const authRoutes = require('./routes/authRoutes');
 const alertRoutes = require('./routes/alertRoutes');
+const authRoutes = require('./routes/authRoutes');
 const { setupScheduledTasks } = require('./utils/scheduler');
 
-// Debugging: Check if environment variables are loaded
-console.log("🔍 Checking environment variables...");
-console.log("MONGO_URI:", process.env.MONGO_URI ? "Loaded ✅" : "❌ Undefined!");
-console.log("PORT:", process.env.PORT || 5000);
+// Load environment variables
+dotenv.config();
 
-// Initialize express app
+// Create Express app
 const app = express();
 
-// ✅ Enhanced CORS Configuration (Allow Netlify & Localhost)
+// CORS configuration
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://medicine-management-system.netlify.app'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  // In production, restrict origins to your Netlify domain
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://medi-track-management.netlify.app', 'http://localhost:3000'] 
+    : 'http://localhost:3000',
   credentials: true
 }));
 
-// Middleware
+// Body parser middleware
 app.use(express.json());
 
-// Debug route
+// Routes
+app.use('/api/medicines', medicineRoutes);
+app.use('/api/alerts', alertRoutes);
+app.use('/api/auth', authRoutes);
+
+// Simple test route for checking connection
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });
 });
 
-// Routes
-app.use('/api/medicines', medicineRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/alerts', alertRoutes);
-
-// ✅ Error Handling Middleware
-app.use((err, req, res, next) => {
-  console.error('Server Error:', err.stack);
-  res.status(500).send({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Server error'
-  });
+// Health check endpoint (useful for Render)
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
-// Start server
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Server error', error: err.message });
+});
+
+// Set port
 const PORT = process.env.PORT || 5000;
 
-// Connect to DB and Start Server
+// Connect to database and then set up schedules
 const startServer = async () => {
   try {
     await connectDB();
-    setupScheduledTasks(); // Set up alerts & tasks
+    
+    // Set up scheduled tasks including automated alert generation
+    setupScheduledTasks();
+    
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
   } catch (error) {
     console.error(`❌ Server Error: ${error.message}`);

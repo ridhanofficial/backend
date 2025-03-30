@@ -1,14 +1,21 @@
 services:
   - type: web
-    name: medicine-backend
+    name: medicine-management-backend
     env: node
-    plan: free
     buildCommand: npm install
     startCommand: node server.js
     envVars:
-      - key: NODE_VERSION
-        value: 18
+      - key: NODE_ENV
+        value: production
       - key: PORT
-        value: 5000
+        value: 10000
       - key: MONGO_URI
-        sync: false  # Set this manually in Render's dashboard
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: EMAIL_SERVICE
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
