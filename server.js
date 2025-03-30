@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load environment variables at the very top
+require('dotenv').config(); // Load environment variables at the top
 
 const express = require('express');
 const cors = require('cors');
@@ -6,7 +6,7 @@ const connectDB = require('./config/db');
 const medicineRoutes = require('./routes/medicineRoutes');
 const authRoutes = require('./routes/authRoutes');
 const alertRoutes = require('./routes/alertRoutes');
-const { setupScheduledTasks } = require('./utils/scheduler'); // Import scheduler utility
+const { setupScheduledTasks } = require('./utils/scheduler');
 
 // Debugging: Check if environment variables are loaded
 console.log("🔍 Checking environment variables...");
@@ -16,9 +16,9 @@ console.log("PORT:", process.env.PORT || 5000);
 // Initialize express app
 const app = express();
 
-// Enhanced CORS configuration
+// ✅ Enhanced CORS Configuration (Allow Netlify & Localhost)
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: ['http://localhost:3000', 'https://medicine-management-system.netlify.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -36,7 +36,7 @@ app.use('/api/medicines', medicineRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/alerts', alertRoutes);
 
-// Error handling middleware
+// ✅ Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.stack);
   res.status(500).send({ 
@@ -48,14 +48,11 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 5000;
 
-// Connect to database and then set up schedules
+// Connect to DB and Start Server
 const startServer = async () => {
   try {
     await connectDB();
-    
-    // Set up scheduled tasks including automated alert generation
-    setupScheduledTasks();
-    
+    setupScheduledTasks(); // Set up alerts & tasks
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
